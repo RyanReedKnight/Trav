@@ -1,0 +1,92 @@
+When I run the following julia code
+
+```
+export CardinalDirectionLat, North, South
+export CardinalDirectionLon, East, West
+export AngleDegreesMinutesSeconds
+export Bearing
+
+# Enum for North/South
+@enum CardinalDirectionLat begin
+    North = 1
+    South = 2
+end
+
+# Enum for East/West
+@enum CardinalDirectionLon begin
+    East = 1
+    West = 2
+end
+
+struct AngleDegreesMinutesSeconds
+   degrees::Int
+   minutes::Int
+   seconds::Float64
+
+   function AngleDegreesMinutesSeconds(degrees::Int,minutes::Int,seconds::Float64)
+       # Reduce seconds until under 60, add excess to minutes.
+       while seconds >= 60.000000
+           seconds -= 60.0
+           minutes += 1
+       end
+       # Reduce Minutes until under 60, add excess to degrees.
+       while minutes >= 60
+           minutes -= 60
+           degrees += 1
+       end
+       # Add adjusted feilds to your new object.
+       new(degrees,minutes,seconds)
+   end
+
+   function AngleDegreesMinutesSeconds(angle::AngleDegreesMinutesSeconds)
+      new(angle.degrees,angle.minutes,angle.seconds)
+   end
+
+end
+
+function to_string(angle::AngleDegreesMinutesSeconds)
+    degrees = string(angle.degrees)
+    minutes = string(angle.minutes)
+    seconds = string(angle.seconds)
+
+    if angle.seconds < 10.0
+        seconds = "0"*seconds
+    end
+
+    if angle.minutes < 10
+        minutes = "0"*minutes
+    end
+
+    return "$(degrees)°$(minutes)\'$(seconds)\""
+end
+
+function Base.show(io::IO,x::AngleDegreesMinutesSeconds)
+   print(io,"AngleDegreesMinutesSeconds($(to_string(x)))")
+end
+
+struct Bearing
+    lat_dir::CardinalDirectionLat
+    lon_dir::CardinalDirectionLon
+    angle::AngleDegreesMinutesSeconds
+
+    function Bearing(lat_dir::CardinalDirectionLat, lon_dir::CardinalDirectionLon, angle::AngleDegreesMinutesSeconds)
+        if angle.degrees > 90 || (angle.degrees == 90 && (angle.minutes > 0 || angle.seconds > 0.0))
+            throw(DomainError(angle,"Does $(lat_dir) $(to_string(angle)) $(lon_dir) make sense to you? It certainly doesn\'t to me.  Bearings can\'t have angles greater than 90 degrees Sir or Madam."))
+        new(lat_dir,lon_dir,AngleDegreesMinutesSeconds(angle))
+        end
+    end
+end
+
+function Base.show(io::IO,x::Bearing)
+    print(io,"Bearing($(x.lat_dir)$(to_string(x.angle))$(x.lon_dir))")
+end
+
+test = AngleDegreesMinutesSeconds(90,0,0.0)
+b = Bearing(North,East,test)
+test2 = AngleDegreesMinutesSeconds(test)
+println(b)
+```
+
+I get this error output
+""
+
